@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Quiz App</title>
+    <link rel="apple-touch-icon" href="icon-512.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <button onclick="openAdmin()">Admin</button>
+
+    <!-- USER AREA -->
+    <div id="quizContainer">
+      <h2 id="questionTitle"></h2>
+      <div id="questionContent"></div>
+      <div id="optionsContainer"></div>
+      <button onclick="nextQuestion()">Câu tiếp</button>
+    </div>
+
+    <!-- ADMIN AREA -->
+    <div id="adminPanel" class="hidden">
+      <h2>Thêm câu hỏi</h2>
+
+      <label for="questionType">Loại câu hỏi:</label>
+      <select id="questionType" onchange="changeType()">
+        <option value="single">Single</option>
+        <option value="group">Group</option>
+      </select>
+
+      <br /><br />
+
+      <!-- SINGLE FORM -->
+      <div id="singleForm">
+        <textarea id="singleQuestion" placeholder="Nhập câu hỏi"></textarea>
+
+        <input type="text" id="imageUrl" placeholder="Link hình ảnh (nếu có)" />
+
+        <textarea id="singleOptions" placeholder="Mỗi đáp án 1 dòng"></textarea>
+
+        <input
+          type="number"
+          id="singleAnswer"
+          placeholder="Đáp án đúng (0,1,2...)"
+        />
+      </div>
+
+      <!-- GROUP FORM -->
+      <div id="groupForm" class="hidden">
+        <input type="text" id="groupTitle" placeholder="Tiêu đề" />
+        <input
+          type="text"
+          id="groupImage"
+          placeholder="Link hình ảnh (nếu có)"
+        />
+
+        <textarea
+          id="groupContent"
+          placeholder="Nội dung câu hỏi (có thể ghi (1)(2))"
+        ></textarea>
+
+        <textarea
+          id="groupBlanks"
+          placeholder="
+Ví dụ:
+1|ア サンプリング,イ 抜取検査,ウ 工程管理|0
+2|ア 計数データ,イ 母数,ウ 統計量|0
+"
+        ></textarea>
+      </div>
+
+      <br />
+      <button onclick="generateCode()">Tạo code</button>
+      <button onclick="closeAdmin()">Quay lại</button>
+
+      <h3>Code tạo ra:</h3>
+      <textarea
+        id="outputCode"
+        readonly
+        placeholder="Code sẽ được tạo ra ở đây"
+      ></textarea>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
