@@ -1,3 +1,5 @@
+let currentExam = null;
+let filteredQuestions = [];
 let currentQuestion = 0;
 
 window.onload = function () {
@@ -10,16 +12,61 @@ window.onload = function () {
 // ======================
 function convertFurigana(text) {
   return text.replace(
-    /([一-龯々〆ヵヶ]+)\(([\u3040-\u309F]+)\)/g,
+    /([一-龯々〆ヵヶ]+)\(([\u3040-\u30FF]+)\)/g,
     '<ruby>$1<rt>$2</rt></ruby>',
   );
 }
+// ======================
+// START EXAM
+// ======================
+function startExam() {
+  const examNumber = document.getElementById('examDropdown').value;
 
+  if (!examNumber) {
+    alert('Hãy chọn kỳ thi');
+    return;
+  }
+
+  currentExam = Number(examNumber);
+
+  filteredQuestions = questions.filter((q) => q.exam === currentExam);
+
+  currentQuestion = 0;
+
+  document.getElementById('examSelect').classList.add('hidden');
+  document.getElementById('quizContainer').classList.remove('hidden');
+
+  loadQuestion();
+}
+// ======================
+// BACK TO EXAM SELECT
+// ======================
+function backToExam() {
+  document.getElementById('quizContainer').classList.add('hidden');
+
+  document.getElementById('examSelect').classList.remove('hidden');
+}
+// ======================
+// SELECT EXAM
+// ======================
+function selectExam(examNumber) {
+  currentExam = examNumber;
+
+  filteredQuestions = questions.filter((q) => q.exam === examNumber);
+
+  currentQuestion = 0;
+
+  document.getElementById('examSelect').classList.add('hidden');
+
+  document.getElementById('quizContainer').classList.remove('hidden');
+
+  loadQuestion();
+}
 // ======================
 // LOAD QUESTION
 // ======================
 function loadQuestion() {
-  const q = questions[currentQuestion];
+  const q = filteredQuestions[currentQuestion];
   const title = document.getElementById('questionTitle');
   const content = document.getElementById('questionContent');
   const optionsContainer = document.getElementById('optionsContainer');
@@ -47,8 +94,8 @@ function loadQuestion() {
       optionsContainer.appendChild(btn);
     });
   } else if (q.type === 'group') {
-    title.innerHTML = q.title;
-    content.innerHTML = q.content;
+    title.innerHTML = convertFurigana(q.title);
+    content.innerHTML = convertFurigana(q.content).replace(/\n/g, '<br>');
 
     if (q.image && q.image !== '') {
       const img = document.createElement('img');
@@ -69,7 +116,7 @@ function loadQuestion() {
 
       blank.options.forEach((opt, index) => {
         const btn = document.createElement('button');
-        btn.innerText = opt;
+        btn.innerHTML = convertFurigana(opt);
         btn.onclick = () => checkSingleAnswer(index, blank.answer, btn);
         blankDiv.appendChild(btn);
       });
@@ -83,11 +130,25 @@ function loadQuestion() {
 // CHECK ANSWER
 // ======================
 function checkSingleAnswer(selected, correct, button) {
-  if (selected === correct) {
+  if (correct === null || correct === undefined || correct === '') return;
+
+  const correctIndex = parseInt(correct);
+  if (isNaN(correctIndex)) return;
+
+  // mark clicked button
+  if (selected === correctIndex) {
     button.classList.add('correct');
   } else {
     button.classList.add('wrong');
   }
+
+  // highlight the correct button and disable all buttons in the same block
+  const container = button.parentElement;
+  const buttons = Array.from(container.querySelectorAll('button'));
+  buttons.forEach((b, i) => {
+    if (i === correctIndex) b.classList.add('correct');
+    b.disabled = true;
+  });
 }
 
 // ======================
@@ -144,7 +205,6 @@ function changeType() {
 // GENERATE CODE
 // ======================
 function generateCode() {
-  const image = document.getElementById('groupImage').value;
   const type = document.getElementById('questionType').value;
   let output = '';
 
@@ -152,9 +212,15 @@ function generateCode() {
     const question = document.getElementById('singleQuestion').value;
     const image = document.getElementById('imageUrl').value;
     const optionsRaw = document.getElementById('singleOptions').value;
-    const answer = document.getElementById('singleAnswer').value;
 
-    const options = optionsRaw.split('\n').map((opt) => `"${opt}"`);
+    const answerValue = document.getElementById('singleAnswer').value.trim();
+    const answer = answerValue !== '' ? parseInt(answerValue) : null;
+
+    const options = optionsRaw
+      .split('\n')
+      .map((opt) => opt.trim())
+      .filter(Boolean)
+      .map((opt) => `"${opt}"`);
 
     output = `
 {
@@ -169,16 +235,32 @@ function generateCode() {
 `;
   } else {
     const title = document.getElementById('groupTitle').value;
+    const image = document.getElementById('groupImage').value;
     const content = document.getElementById('groupContent').value;
     const blanksRaw = document.getElementById('groupBlanks').value;
 
-    const blankLines = blanksRaw.trim().split('\n');
+    const blankLines = blanksRaw
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
 
     let blanksCode = blankLines.map((line) => {
-      const parts = line.split('|');
-      const id = parts[0];
-      const options = parts[1].split(',').map((o) => `"${o}"`);
-      const answer = parts[2];
+      const parts = line.split('|').map((p) => p.trim());
+
+      const id = parseInt(parts[0]);
+
+      let answer;
+      if (!parts[2]) {
+        answer = null;
+      } else {
+        answer = parseInt(parts[2]);
+      }
+
+      const options = parts[1]
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean)
+        .map((o) => `"${o}"`);
 
       return `
     {
@@ -193,7 +275,7 @@ function generateCode() {
   type: "group",
   title: "${title}",
   image: "${image}",
-  content: \`${content}\`,
+  content: \`${content.replace(/`/g, '\\`')}\`,
   blanks: [
     ${blanksCode.join(',')}
   ]
