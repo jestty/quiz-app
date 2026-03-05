@@ -10,14 +10,36 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- ADMIN BUTTON -->
     <button onclick="openAdmin()">Admin</button>
-
+    <!-- EXAM SELECT -->
+    <div id="examSelect">
+      <h2>Chọn kỳ thi</h2>
+      <select id="examDropdown" title="Chọn kỳ thi">
+        <option value="">-- Chọn kỳ thi --</option>
+        <option value="33">Kỳ 33</option>
+        <option value="34">Kỳ 34</option>
+        <option value="35">Kỳ 35</option>
+        <option value="36">Kỳ 36</option>
+        <option value="37">Kỳ 37</option>
+        <option value="38">Kỳ 38</option>
+      </select>
+      <br /><br />
+      <button onclick="startExam()">Bắt đầu</button>
+    </div>
     <!-- USER AREA -->
-    <div id="quizContainer">
+    <div id="quizContainer" class="hidden">
       <h2 id="questionTitle"></h2>
+
       <div id="questionContent"></div>
+
       <div id="optionsContainer"></div>
+
       <button onclick="nextQuestion()">Câu tiếp</button>
+
+      <br /><br />
+
+      <button onclick="backToExam()">← Quay lại chọn kỳ</button>
     </div>
 
     <!-- ADMIN AREA -->
