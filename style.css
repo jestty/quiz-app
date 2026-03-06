@@ -1,84 +1,404 @@
+/* ========== GLOBAL STYLES ========== */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 body {
-  font-family: sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
-  padding: 20px;
-  background: #f4f4f4;
+  padding: 0;
+  background: #f8f9fa;
   color: #222;
   text-align: left;
-  font-size: 16px; /* quan trọng cho iOS không zoom */
+  font-size: 16px;
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
-
-  /* Center content responsively for desktop and mobile */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Adjust to center if needed, but start for scrolling */
+  justify-content: flex-start;
   min-height: 100vh;
-  padding: 20px;
+  box-sizing: border-box;
+  padding-top: 15px;
+  padding-bottom: 70px;
+}
+
+/* ========== SCREEN CONTAINERS ========== */
+#examSelect,
+#quizContainer,
+#adminPanel {
+  width: 100%;
+  max-width: 600px;
+  padding: 15px;
   box-sizing: border-box;
 }
 
-/* Media query for mobile devices */
-@media (max-width: 768px) {
-  body {
-    padding: 10px; /* Reduce padding on small screens */
-    justify-content: center; /* Center vertically on mobile if content fits */
-  }
+#examSelect {
+  text-align: center;
 }
 
-.hidden {
-  display: none;
+#quizContainer {
+  padding-bottom: 100px;
 }
 
+/* ========== HEADINGS ========== */
+h1,
+h2,
+h3 {
+  color: #333;
+  font-weight: 600;
+  margin-top: 15px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h3 {
+  font-size: 16px;
+}
+
+/* ========== BUTTONS ========== */
 button {
-  padding: 6px 10px;
-  margin: 5px 0;
+  height: 48px;
+  min-width: 100%;
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background-color: #007aff;
+  color: white;
   cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button:active {
+  background-color: #0051d5;
+  transform: scale(0.98);
+}
+
+button:disabled {
+  background-color: #ccc;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Admin button - corner position */
+#adminButton {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: auto;
+  z-index: 100;
+}
+
+#adminButton button {
+  height: 44px;
+  width: auto;
+  min-width: 60px;
+  padding: 10px 14px;
+  font-size: 14px;
+  background-color: #ff9500;
+}
+
+/* Back button - corner position */
+#backButton {
+  position: fixed;
+  bottom: 20px;
+  right: 12px;
+  left: auto;
+  height: 40px;
+  width: auto;
+  padding: 8px 12px;
+  min-width: 45px;
+  background-color: rgba(0, 122, 255, 0.8);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+  white-space: nowrap;
+  z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#backButton:active {
+  background-color: rgba(0, 81, 213, 0.9);
+  transform: scale(0.95);
+}
+
+/* Admin Back button - corner position */
+#adminBackButton {
+  position: fixed;
+  bottom: 20px;
+  right: 12px;
+  left: auto;
+  width: auto;
+  z-index: 100;
+}
+
+#adminBackButton button {
+  height: 44px;
+  width: auto;
+  min-width: 85px;
+  padding: 10px 14px;
+  font-size: 14px;
+  background-color: #ff9500;
+  display: inline-block;
+}
+
+#adminBackButton button:active {
+  background-color: #e68900;
+  transform: scale(0.95);
+}
+
+/* Next button - full width */
+#nextButton {
+  background-color: #34c759;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+#nextButton:active {
+  background-color: #28a745;
+}
+
+/* Action buttons container */
+.btn-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 15px;
+}
+
+.btn-group button {
+  flex: 1;
+  margin: 0;
+}
+
+/* ========== FORM ELEMENTS ========== */
+select,
+input[type='text'],
+input[type='number'],
+textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  font-family: inherit;
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+input,
+textarea {
+  border: 1px solid #ccc;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #007aff;
+  background-color: #f9f9f9;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+textarea {
+  height: 100px;
+  resize: vertical;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* ========== ANSWER OPTIONS ========== */
+#optionsContainer {
+  margin: 20px 0;
+}
+
+#optionsContainer button {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+  text-align: left;
+  margin-bottom: 10px;
+  transition: all 0.15s ease;
+}
+
+#optionsContainer button:active {
+  background-color: #e8e8e8;
+  transform: scale(0.98);
 }
 
 .blank-block {
-  margin-top: 15px;
-  padding: 10px;
-  border-top: 1px solid #ccc;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: white;
+  border-left: 4px solid #007aff;
+  border-radius: 6px;
 }
 
+.blank-block p {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.blank-block button {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+/* ========== ANSWER STATES ========== */
 .correct {
-  background-color: #4caf50;
-  color: white;
+  background-color: #34c759 !important;
+  color: white !important;
+  border-color: #34c759 !important;
 }
 
 .wrong {
-  background-color: #f44336;
-  color: white;
+  background-color: #ff3b30 !important;
+  color: white !important;
+  border-color: #ff3b30 !important;
 }
 
+/* ========== CONTENT TEXT ========== */
+#questionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+#questionContent {
+  white-space: pre-line;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  background-color: white;
+  padding: 15px;
+  border-radius: 6px;
+  color: #333;
+}
+
+#questionContent img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+/* ========== RUBY TEXT (FURIGANA) ========== */
 ruby {
   -webkit-ruby-position: over;
   ruby-position: over;
 }
 
 rt {
-  font-size: 12px;
-  color: rgba(133, 39, 39, 0.781);
+  font-size: 11px;
+  color: #d32f2f;
 }
 
-textarea {
-  width: 100%;
-  height: 80px;
-  margin-bottom: 10px;
+/* ========== ADMIN AREA ========== */
+#adminPanel {
+  padding-bottom: 100px;
+}
+
+#adminPanel textarea {
+  background-color: #f9f9f9;
 }
 
 #outputCode {
-  height: 200px;
+  height: 120px;
   background: #f4f4f4;
+  font-family: monospace;
+  font-size: 12px;
 }
 
-#questionContent {
-  white-space: pre-line;
+/* ========== MEDIA QUERIES ========== */
+@media (max-width: 768px) {
+  body {
+    padding-top: 10px;
+    padding-bottom: 60px;
+  }
+
+  #examSelect,
+  #quizContainer,
+  #adminPanel {
+    padding: 12px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  button {
+    height: 48px;
+    font-size: 16px;
+    margin: 8px 0;
+  }
+
+  select,
+  input[type='text'],
+  input[type='number'],
+  textarea {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  #backButton {
+    position: fixed;
+    bottom: 15px;
+    right: 8px;
+    left: auto;
+  }
+
+  #adminBackButton {
+    position: fixed;
+    bottom: 15px;
+    right: 8px;
+    left: auto;
+  }
+
+  #adminButton {
+    top: 8px;
+    right: 8px;
+  }
 }
