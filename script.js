@@ -3,8 +3,7 @@ let filteredQuestions = [];
 let currentQuestion = 0;
 
 window.onload = function () {
-  closeAdmin();
-  loadQuestion();
+  showScreen('examSelect');
 };
 
 // ======================
@@ -15,6 +14,42 @@ function convertFurigana(text) {
     /([一-龯々〆ヵヶ]+)\(([\u3040-\u30FF]+)\)/g,
     '<ruby>$1<rt>$2</rt></ruby>',
   );
+}
+// ======================
+// SHOW SCREEN
+// ======================
+function showScreen(screen) {
+  const exam = document.getElementById('examSelect');
+  const quiz = document.getElementById('quizContainer');
+  const admin = document.getElementById('adminPanel');
+  const back = document.getElementById('backButton');
+  const adminBtn = document.getElementById('adminButton');
+  const adminBack = document.getElementById('adminBackButton');
+  const nextBtn = document.getElementById('nextButton');
+
+  // ẩn tất cả
+  exam.classList.add('hidden');
+  quiz.classList.add('hidden');
+  admin.classList.add('hidden');
+
+  // hiện màn hình cần
+  document.getElementById(screen).classList.remove('hidden');
+
+  // ẩn tất cả nút back
+  back.classList.add('hidden');
+  adminBack.classList.add('hidden');
+  adminBtn.classList.add('hidden');
+  nextBtn.classList.add('hidden');
+
+  // logic hiển thị nút theo màn hình
+  if (screen === 'examSelect') {
+    adminBtn.classList.remove('hidden');
+  } else if (screen === 'quizContainer') {
+    back.classList.remove('hidden');
+    nextBtn.classList.remove('hidden');
+  } else if (screen === 'adminPanel') {
+    adminBack.classList.remove('hidden');
+  }
 }
 // ======================
 // START EXAM
@@ -34,31 +69,24 @@ function startExam() {
   currentQuestion = 0;
 
   document.getElementById('examSelect').classList.add('hidden');
-  document.getElementById('quizContainer').classList.remove('hidden');
+  showScreen('quizContainer');
 
   loadQuestion();
 }
 // ======================
 // BACK TO EXAM SELECT
 // ======================
-function backToExam() {
-  document.getElementById('quizContainer').classList.add('hidden');
-
-  document.getElementById('examSelect').classList.remove('hidden');
+function goHome() {
+  showScreen('examSelect');
 }
 // ======================
 // SELECT EXAM
 // ======================
 function selectExam(examNumber) {
-  currentExam = examNumber;
-
-  filteredQuestions = questions.filter((q) => q.exam === examNumber);
-
+  selectedExam = examNumber;
   currentQuestion = 0;
 
-  document.getElementById('examSelect').classList.add('hidden');
-
-  document.getElementById('quizContainer').classList.remove('hidden');
+  showScreen('quizContainer');
 
   loadQuestion();
 }
@@ -174,16 +202,14 @@ function openAdmin() {
 
   if (password === '123456') {
     // ← bạn đổi mật khẩu ở đây
-    document.getElementById('adminPanel').classList.remove('hidden');
-    document.getElementById('quizContainer').classList.add('hidden');
+    showScreen('adminPanel');
   } else {
     alert('Sai mật khẩu!');
   }
 }
 
 function closeAdmin() {
-  document.getElementById('adminPanel').classList.add('hidden');
-  document.getElementById('quizContainer').classList.remove('hidden');
+  showScreen('examSelect');
 }
 
 // ======================
@@ -205,6 +231,7 @@ function changeType() {
 // GENERATE CODE
 // ======================
 function generateCode() {
+  const exam = document.getElementById('adminExam').value;
   const type = document.getElementById('questionType').value;
   let output = '';
 
@@ -224,6 +251,7 @@ function generateCode() {
 
     output = `
 {
+  exam: ${exam},
   type: "single",
   question: "${question}",
   image: "${image}",
@@ -272,6 +300,7 @@ function generateCode() {
 
     output = `
 {
+  exam: ${exam},
   type: "group",
   title: "${title}",
   image: "${image}",
@@ -300,3 +329,5 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+
+showScreen('examSelect');
