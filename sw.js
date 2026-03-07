@@ -1,6 +1,6 @@
 const CACHE_NAME = 'quiz-app-v2'; // đổi version khi update
 
-const STATIC_FILES = ['index.html', 'style.css', 'script.js', 'manifest.json'];
+const STATIC_FILES = ['/', '/index.html', '/style.css', '/script.js', '/manifest.json'];
 
 // INSTALL
 self.addEventListener('install', (event) => {
@@ -53,3 +53,4 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
+
