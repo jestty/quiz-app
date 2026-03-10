@@ -1,6 +1,7 @@
 let currentExam = null;
 let filteredQuestions = [];
 let currentQuestion = 0;
+let correctCount = 0;
 
 window.onload = function () {
   showScreen('examSelect');
@@ -62,13 +63,37 @@ function startExam() {
     return;
   }
 
+  // RESET trạng thái cũ
   currentExam = Number(examNumber);
-
-  filteredQuestions = questions.filter((q) => q.exam === currentExam);
-
   currentQuestion = 0;
+  correctCount = 0;
+  filteredQuestions = [];
 
-  document.getElementById('examSelect').classList.add('hidden');
+  // Lọc câu hỏi theo kỳ thi
+  filteredQuestions = questions.filter(
+    (q) => String(q.exam) === String(currentExam),
+  );
+
+  console.log('Questions:', filteredQuestions);
+
+  // Nếu kỳ thi không có câu hỏi
+  if (filteredQuestions.length === 0) {
+    showScreen('quizContainer');
+
+    document.getElementById('questionTitle').innerText = 'Không có dữ liệu';
+    document.getElementById('questionContent').innerText =
+      'Kỳ thi này chưa có câu hỏi';
+    document.getElementById('optionsContainer').innerHTML = '';
+
+    document.getElementById('progress').innerText = '';
+    document.getElementById('score').innerText = '✔ 0';
+
+    return;
+  }
+
+  // Trộn câu hỏi
+  filteredQuestions.sort(() => Math.random() - 0.5);
+
   showScreen('quizContainer');
 
   loadQuestion();
@@ -82,6 +107,7 @@ function goHome() {
 // ======================
 // SELECT EXAM
 // ======================
+/*
 function selectExam(examNumber) {
   selectedExam = examNumber;
   currentQuestion = 0;
@@ -91,19 +117,36 @@ function selectExam(examNumber) {
   loadQuestion();
 }
 // ======================
+*/
 // LOAD QUESTION
 // ======================
 function loadQuestion() {
+  if (filteredQuestions.length === 0) {
+    console.log('Không có câu hỏi');
+    return;
+  }
+
   const q = filteredQuestions[currentQuestion];
+  if (!q) {
+    console.log('Câu hỏi undefined');
+    return;
+  }
+
   const title = document.getElementById('questionTitle');
   const content = document.getElementById('questionContent');
   const optionsContainer = document.getElementById('optionsContainer');
+
+  document.getElementById('progress').innerText =
+    'Câu ' + (currentQuestion + 1) + ' / ' + filteredQuestions.length;
+
+  document.getElementById('score').innerText = '✔ ' + correctCount;
 
   content.innerHTML = '';
   optionsContainer.innerHTML = '';
 
   if (q.type === 'single') {
     title.innerHTML = 'Câu ' + (currentQuestion + 1);
+
     content.innerHTML = convertFurigana(q.question);
 
     if (q.image && q.image !== '') {
@@ -117,12 +160,16 @@ function loadQuestion() {
 
     q.options.forEach((opt, index) => {
       const btn = document.createElement('button');
+
       btn.innerHTML = convertFurigana(opt);
+
       btn.onclick = () => checkSingleAnswer(index, q.answer, btn);
+
       optionsContainer.appendChild(btn);
     });
   } else if (q.type === 'group') {
     title.innerHTML = convertFurigana(q.title);
+
     content.innerHTML = convertFurigana(q.content).replace(/\n/g, '<br>');
 
     if (q.image && q.image !== '') {
@@ -139,19 +186,33 @@ function loadQuestion() {
       blankDiv.className = 'blank-block';
 
       const label = document.createElement('p');
-      label.innerText = '(' + blank.id + ')';
+      label.innerText = '(' + (blank.id || '') + ')';
+
       blankDiv.appendChild(label);
 
       blank.options.forEach((opt, index) => {
         const btn = document.createElement('button');
+
         btn.innerHTML = convertFurigana(opt);
-        btn.onclick = () => checkSingleAnswer(index, blank.answer, btn);
+
+        btn.onclick = () => {
+          checkSingleAnswer(index, blank.answer, btn);
+          btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
         blankDiv.appendChild(btn);
       });
 
       optionsContainer.appendChild(blankDiv);
     });
   }
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  });
+
+  renderMath();
 }
 
 // ======================
@@ -164,8 +225,9 @@ function checkSingleAnswer(selected, correct, button) {
   if (isNaN(correctIndex)) return;
 
   // mark clicked button
-  if (selected === correctIndex) {
+  if (selected === correctIndex && !button.classList.contains('correct')) {
     button.classList.add('correct');
+    correctCount++;
   } else {
     button.classList.add('wrong');
   }
@@ -177,16 +239,28 @@ function checkSingleAnswer(selected, correct, button) {
     if (i === correctIndex) b.classList.add('correct');
     b.disabled = true;
   });
+  renderMath();
 }
 
 // ======================
 // NEXT QUESTION
 // ======================
 function nextQuestion() {
-  currentQuestion++;
-  if (currentQuestion >= questions.length) {
-    currentQuestion = 0;
+  if (currentQuestion + 1 >= filteredQuestions.length) {
+    alert(
+      'Hoàn thành!\n\nĐiểm: ' +
+        correctCount +
+        ' / ' +
+        filteredQuestions.length +
+        'Câu hỏi',
+    );
+
+    showScreen('examSelect');
+    return;
   }
+
+  currentQuestion++;
+
   loadQuestion();
 }
 
@@ -236,8 +310,11 @@ function generateCode() {
   let output = '';
 
   if (type === 'single') {
-    const question = document.getElementById('singleQuestion').value;
+    let question = document.getElementById('singleQuestion').value;
+    question = escapeForJS(prepareLatex(question));
+
     const image = document.getElementById('imageUrl').value;
+
     const optionsRaw = document.getElementById('singleOptions').value;
 
     const answerValue = document.getElementById('singleAnswer').value.trim();
@@ -247,7 +324,7 @@ function generateCode() {
       .split('\n')
       .map((opt) => opt.trim())
       .filter(Boolean)
-      .map((opt) => `"${opt}"`);
+      .map((opt) => `"${escapeForJS(prepareLatex(opt))}"`);
 
     output = `
 {
@@ -262,9 +339,14 @@ function generateCode() {
 },
 `;
   } else {
-    const title = document.getElementById('groupTitle').value;
+    let title = document.getElementById('groupTitle').value;
+    title = escapeForJS(prepareLatex(title));
+
     const image = document.getElementById('groupImage').value;
-    const content = document.getElementById('groupContent').value;
+
+    let content = document.getElementById('groupContent').value;
+    content = escapeForJS(prepareLatex(content));
+
     const blanksRaw = document.getElementById('groupBlanks').value;
 
     const blankLines = blanksRaw
@@ -288,7 +370,7 @@ function generateCode() {
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean)
-        .map((o) => `"${o}"`);
+        .map((o) => `"${prepareLatex(o)}"`);
 
       return `
     {
@@ -304,7 +386,7 @@ function generateCode() {
   type: "group",
   title: "${title}",
   image: "${image}",
-  content: \`${content.replace(/`/g, '\\`')}\`,
+  content: "${content}",
   blanks: [
     ${blanksCode.join(',')}
   ]
@@ -329,5 +411,44 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+// ======================
+// RENDER MATHJAX
+// ======================
+function renderMath() {
+  if (window.MathJax) {
+    MathJax.typesetPromise()
+      .then(() => console.log('MathJax rendered'))
+      .catch((err) => console.log(err.message));
+  }
+}
 
-showScreen('examSelect');
+// ======================
+// PREPARE LATEX
+// ======================
+function prepareLatex(text) {
+  if (!text) return '';
+
+  text = text.trim();
+
+  const hasLatex =
+    text.includes('\\frac') ||
+    text.includes('\\sqrt') ||
+    text.includes('\\sum') ||
+    text.includes('\\int') ||
+    text.includes('\\displaylines');
+
+  if (hasLatex && !text.includes('\\[')) {
+    text = '\\[' + text + '\\]';
+  }
+
+  return text;
+}
+// ======================
+function escapeForJS(text) {
+  if (!text) return '';
+
+  return text
+    .replace(/\\/g, '\\\\') // escape \
+    .replace(/"/g, '\\"') // escape "
+    .replace(/\n/g, '\\n'); // xuống dòng
+}
