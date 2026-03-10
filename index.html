@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Quiz App</title>
+    <script src="MathJax-3.2.2/es5/tex-mml-chtml.js"></script>
     <link rel="apple-touch-icon" href="icon-512.png" />
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="style.css" />
@@ -18,7 +19,9 @@
     </div>
     <!-- BACK BUTTON FOR ADMIN -->
     <div id="adminBackButton" class="hidden">
-      <button onclick="closeAdmin()" style="background-color: #ff9500">◀ Quay lại</button>
+      <button onclick="closeAdmin()" style="background-color: #ff9500">
+        ◀ Quay lại
+      </button>
     </div>
     <!-- EXAM SELECT -->
     <div id="examSelect">
@@ -57,6 +60,11 @@
       <button id="nextButton" onclick="nextQuestion()">➜ Câu tiếp theo</button>
 
       <br /><br />
+      <div class="infoBar">
+        <span id="progress"></span>
+        <span id="score"></span>
+        <span id="timer"></span>
+      </div>
 
       <button id="backButton" class="hidden" onclick="goHome()">
         ◀ Quay lại
