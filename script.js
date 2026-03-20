@@ -309,22 +309,24 @@ function generateCode() {
   const type = document.getElementById('questionType').value;
   let output = '';
 
+  const labels = ['ア.', 'イ.', 'ウ.', 'エ.', 'オ.', 'カ.', 'キ.', 'ク.'];
+
   if (type === 'single') {
     let question = document.getElementById('singleQuestion').value;
-    question = escapeForJS(prepareLatex(question));
+    question = escapeForJS(fixInlineLatex(prepareLatex(question)));
 
     const image = document.getElementById('imageUrl').value;
-
     const optionsRaw = document.getElementById('singleOptions').value;
 
     const answerValue = document.getElementById('singleAnswer').value.trim();
     const answer = answerValue !== '' ? parseInt(answerValue) : null;
 
-    const options = optionsRaw
-      .split('\n')
-      .map((opt) => opt.trim())
-      .filter(Boolean)
-      .map((opt) => `"${escapeForJS(prepareLatex(opt))}"`);
+    const rawOptions = splitOptionsSafe(optionsRaw);
+
+    const options = rawOptions.map((opt, index) => {
+      let fixed = fixInlineLatex(prepareLatex(opt));
+      return `"${labels[index]} ${escapeForJS(fixed)}"`;
+    });
 
     output = `
 {
@@ -340,12 +342,12 @@ function generateCode() {
 `;
   } else {
     let title = document.getElementById('groupTitle').value;
-    title = escapeForJS(prepareLatex(title));
+    title = escapeForJS(fixInlineLatex(prepareLatex(title)));
 
     const image = document.getElementById('groupImage').value;
 
     let content = document.getElementById('groupContent').value;
-    content = escapeForJS(prepareLatex(content));
+    content = escapeForJS(fixInlineLatex(prepareLatex(content)));
 
     const blanksRaw = document.getElementById('groupBlanks').value;
 
@@ -358,24 +360,21 @@ function generateCode() {
       const parts = line.split('|').map((p) => p.trim());
 
       const id = parseInt(parts[0]);
+      const answer = parts[2] ? parseInt(parts[2]) : null;
 
-      let answer;
-      if (!parts[2]) {
-        answer = null;
-      } else {
-        answer = parseInt(parts[2]);
-      }
+      const rawOptions = splitOptionsSafe(parts[1]);
 
-      const options = parts[1]
-        .split(',')
-        .map((o) => o.trim())
-        .filter(Boolean)
-        .map((o) => `"${prepareLatex(o)}"`);
+      const options = rawOptions.map((o, index) => {
+        let fixed = fixInlineLatex(prepareLatex(o));
+        return `"${labels[index]} ${escapeForJS(fixed)}"`;
+      });
 
       return `
     {
       id: ${id},
-      options: [${options.join(', ')}],
+      options: [
+        ${options.join(',\n        ')}
+      ],
       answer: ${answer}
     }`;
     });
@@ -386,7 +385,7 @@ function generateCode() {
   type: "group",
   title: "${title}",
   image: "${image}",
-  content: "${content}",
+  content: \`${content}\`,
   blanks: [
     ${blanksCode.join(',')}
   ]
@@ -399,6 +398,7 @@ function generateCode() {
 // ======================
 // SERVICE WORKER
 // ======================
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     navigator.serviceWorker
@@ -411,6 +411,7 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+  
 // ======================
 // RENDER MATHJAX
 // ======================
@@ -425,30 +426,124 @@ function renderMath() {
 // ======================
 // PREPARE LATEX
 // ======================
-function prepareLatex(text) {
-  if (!text) return '';
+function prepareLatex(str) {
+  if (!str) return str;
 
-  text = text.trim();
+  return str.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// ====================== ham escape cho JS string, tránh lỗi khi có dấu " hoặc \ trong câu hỏi hoặc đáp án ======================
+function escapeForJS(str) {
+  if (!str) return str;
 
-  const hasLatex =
-    text.includes('\\frac') ||
-    text.includes('\\sqrt') ||
-    text.includes('\\sum') ||
-    text.includes('\\int') ||
-    text.includes('\\displaylines');
+  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/`/g, '\\`');
+}
 
-  if (hasLatex && !text.includes('\\[')) {
-    text = '\\[' + text + '\\]';
+// ====================== ham tách options tiếng Nhật ======================
+function splitJapaneseOptions(str) {
+  if (!str) return [];
+
+  const result = [];
+  let current = '';
+  let brace = 0;
+  let paren = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    if (char === '{') brace++;
+    if (char === '}') brace--;
+
+    if (char === '(') paren++;
+    if (char === ')') paren--;
+
+    // split tại ", ア." thay vì chỉ ","
+    if (
+      char === ',' &&
+      brace === 0 &&
+      paren === 0 &&
+      /[ア-ン]/.test(str[i + 2]) // kiểm tra ký tự sau ", "
+    ) {
+      result.push(current.trim());
+      current = '';
+      continue;
+    }
+
+    current += char;
   }
 
-  return text;
-}
-// ======================
-function escapeForJS(text) {
-  if (!text) return '';
+  if (current.trim()) {
+    result.push(current.trim());
+  }
 
-  return text
-    .replace(/\\/g, '\\\\') // escape \
-    .replace(/"/g, '\\"') // escape "
-    .replace(/\n/g, '\\n'); // xuống dòng
+  return result;
+}
+
+/// ====================== ham tự động sửa lỗi LaTeX phổ biến trong câu hỏi và đáp án (phiên bản nâng cao) ======================
+function fixInlineLatex(str) {
+  if (!str) return str;
+
+  let result = '';
+  let i = 0;
+
+  while (i < str.length) {
+    // tìm \displaylines
+    if (str.startsWith('\\displaylines', i)) {
+      let start = str.indexOf('{', i);
+      if (start === -1) break;
+
+      let depth = 0;
+      let j = start;
+
+      // tìm dấu } đóng đúng
+      while (j < str.length) {
+        if (str[j] === '{') depth++;
+        else if (str[j] === '}') depth--;
+
+        if (depth === 0) break;
+        j++;
+      }
+
+      // lấy nội dung bên trong
+      const content = str.substring(start + 1, j);
+
+      // thay bằng inline latex
+      result += `\\( ${content} \\)`;
+
+      i = j + 1;
+    } else {
+      result += str[i];
+      i++;
+    }
+  }
+
+  return result;
+}
+// ====================== ham tách options tiếng Nhật, nhưng an toàn hơn, không bị lỗi khi có dấu , trong {} ======================
+function splitOptionsSafe(str) {
+  if (!str) return [];
+
+  const result = [];
+  let current = '';
+  let depth = 0; // theo dõi {}
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    if (char === '{') depth++;
+    if (char === '}') depth--;
+
+    // CHỈ split khi ngoài {}
+    if (char === ',' && depth === 0) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result;
 }
