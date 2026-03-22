@@ -105,19 +105,23 @@ function goHome() {
   showScreen('examSelect');
 }
 // ======================
-// SELECT EXAM
+// RENDER IMAGES
 // ======================
-/*
-function selectExam(examNumber) {
-  selectedExam = examNumber;
-  currentQuestion = 0;
+function renderImages(images) {
+  if (!images || images.length === 0) return '';
 
-  showScreen('quizContainer');
-
-  loadQuestion();
+  return `
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:10px 0;">
+      ${images
+        .map(
+          (src) => `
+        <img src="${src}" style="width:100%; border-radius:10px;">
+      `,
+        )
+        .join('')}
+    </div>
+  `;
 }
-// ======================
-*/
 // LOAD QUESTION
 // ======================
 function loadQuestion() {
@@ -144,19 +148,13 @@ function loadQuestion() {
   content.innerHTML = '';
   optionsContainer.innerHTML = '';
 
+  // 👉 Gom ảnh (hỗ trợ cả image cũ + images mới)
+  const images = q.images || (q.image ? [q.image] : []);
+
   if (q.type === 'single') {
     title.innerHTML = 'Câu ' + (currentQuestion + 1);
 
-    content.innerHTML = convertFurigana(q.question);
-
-    if (q.image && q.image !== '') {
-      const img = document.createElement('img');
-      img.src = q.image;
-      img.style.maxWidth = '300px';
-      img.style.display = 'block';
-      img.style.margin = '10px 0';
-      content.appendChild(img);
-    }
+    content.innerHTML = convertFurigana(q.question) + renderImages(images);
 
     q.options.forEach((opt, index) => {
       const btn = document.createElement('button');
@@ -170,16 +168,8 @@ function loadQuestion() {
   } else if (q.type === 'group') {
     title.innerHTML = convertFurigana(q.title);
 
-    content.innerHTML = convertFurigana(q.content).replace(/\n/g, '<br>');
-
-    if (q.image && q.image !== '') {
-      const img = document.createElement('img');
-      img.src = q.image;
-      img.style.maxWidth = '300px';
-      img.style.display = 'block';
-      img.style.margin = '10px 0';
-      content.appendChild(img);
-    }
+    content.innerHTML =
+      convertFurigana(q.content).replace(/\n/g, '<br>') + renderImages(images);
 
     q.blanks.forEach((blank) => {
       const blankDiv = document.createElement('div');
@@ -315,7 +305,13 @@ function generateCode() {
     let question = document.getElementById('singleQuestion').value;
     question = escapeForJS(fixInlineLatex(prepareLatex(question)));
 
-    const image = document.getElementById('imageUrl').value;
+    const imageRaw = document.getElementById('imagesUrls').value;
+
+    const images = imageRaw
+      .split('\n')
+      .map((i) => i.trim())
+      .filter((i) => i !== '')
+      .map((i) => `"${i.replace(/\\/g, '/')}"`); // 🔥 tự động sửa \ → /
     const optionsRaw = document.getElementById('singleOptions').value;
 
     const answerValue = document.getElementById('singleAnswer').value.trim();
@@ -333,7 +329,9 @@ function generateCode() {
   exam: ${exam},
   type: "single",
   question: "${question}",
-  image: "${image}",
+  images: [
+           ${images.join(',\n    ')}
+          ],
   options: [
     ${options.join(',\n    ')}
   ],
@@ -344,7 +342,13 @@ function generateCode() {
     let title = document.getElementById('groupTitle').value;
     title = escapeForJS(fixInlineLatex(prepareLatex(title)));
 
-    const image = document.getElementById('groupImage').value;
+    const imageRaw = document.getElementById('imageUrls').value;
+
+    const images = imageRaw
+      .split('\n')
+      .map((i) => i.trim())
+      .filter((i) => i !== '')
+      .map((i) => `"${i.replace(/\\/g, '/')}"`); // 🔥 tự động sửa \ → /
 
     let content = document.getElementById('groupContent').value;
     content = escapeForJS(fixInlineLatex(prepareLatex(content)));
@@ -384,7 +388,9 @@ function generateCode() {
   exam: ${exam},
   type: "group",
   title: "${title}",
-  image: "${image}",
+  images: [
+           ${images.join(',\n    ')}
+          ],
   content: \`${content}\`,
   blanks: [
     ${blanksCode.join(',')}
@@ -411,7 +417,7 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-  
+
 // ======================
 // RENDER MATHJAX
 // ======================
