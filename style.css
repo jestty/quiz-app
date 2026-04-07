@@ -68,7 +68,7 @@ h3 {
 
 /* ========== BUTTONS ========== */
 button {
-  height: 48px;
+  height: auto;
   min-width: 100%;
   padding: 12px 16px;
   margin: 8px 0;
